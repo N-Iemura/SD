@@ -62,23 +62,26 @@ class Follower:
 			cy3 = int(M3['m01']/M3['m00'])	#重心のy座標
 		
 		data = np.array([[cx1, cy1], [cx2, cy2], [cx3, cy3]])
-		x = data[:, 0]
-		y = data[:, 1]
-		k = 0
-		while k<3:
-			if data[k] != [0, 0]:
-				data.c[0]
-			k+=1
 
-		x = np.array([cx1, cx2, cx3])
-		cy0 = np.array([cy1, cy2, cy3])
-		n = len(data)
-	    a = ((np.dot(x, y) - y.sum() * x.sum() / n ) /
-         ((x**2).sum() - x.sum()**2 / n ))
-	    b = (y.sum() - a * x.sum()) / n
-		a, b = np.polyfit(cx0, cy0, 1)
-		cx = (cy1-b)/a
-		cv.circle(image, (cx, cy1), 20, (0, 0, 255), -1)	#赤丸を画像に描画
+		k = 0
+		datanew = []
+		print(data[k][0])
+		while k<3:
+			if data[k][0] == 0 and data[k][1] == 0:
+				k+=1
+			else:
+				datanew.append(data[k])
+				k+=1
+
+		x = datanew[:, 0]
+		y = datanew[:, 1]
+		n = len(datanew)
+		
+		a, b = np.polyfit(x, y, 1)
+		y_new = 20
+		x_new = (y_new-b)/a
+
+		cv.circle(image, (x_new, y_new), 20, (0, 0, 255), -1)	#赤丸を画像に描画
 				
 		"""
 		##P制御
