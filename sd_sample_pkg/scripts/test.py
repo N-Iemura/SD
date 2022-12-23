@@ -5,6 +5,7 @@ import cv2 as cv
 import numpy as np
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
+from std_msgs.msg import String
 
 class Follower:
 	def __init__(self):
@@ -56,26 +57,25 @@ class Follower:
 				cx_data.append(cx)
 				cy = int(M['m01']/M['m00'])	#重心のy座標
 				cv.circle(image, (cx, cy), 20, (0, 0, 255), -1)	#赤丸を画像に描画
-		#右パターン
-			##P制御
-			err = max(cx_data) - w//2	#重心座標(x)と画像の中心(x)との差
-			self.twist.linear.x = 0.2
-			#self.twist.angular.z = -float(err)/100	#画像が大きいためか，-1/100では絶対値がまだ十分に大きく，ロボットが暴れてしまう
-			self.twist.angular.z = -float(err)/1000	#誤差にあわせて回転速度を変化させる（-1/1000がP制御でいうところの比例ゲインにあたる）
-			self.cmd_vel_pub.publish(self.twist)
-		
-		#左パターン
-			##P制御
-			"""err = min(cx_data) - w//2	#重心座標(x)と画像の中心(x)との差
-			self.twist.linear.x = 0.2
-			#self.twist.angular.z = -float(err)/100	#画像が大きいためか，-1/100では絶対値がまだ十分に大きく，ロボットが暴れてしまう
-			self.twist.angular.z = -float(err)/1000	#誤差にあわせて回転速度を変化させる（-1/1000がP制御でいうところの比例ゲインにあたる）
-			self.cmd_vel_pub.publish(self.twist)"""
-		
+			#右パターン
+			if cmd == 0:
+				err = max(cx_data) - w//2	#右の重心座標(x)と画像の中心(x)との差
+				self.twist.linear.x = 0.2
+				#self.twist.angular.z = -float(err)/100	#画像が大きいためか，-1/100では絶対値がまだ十分に大きく，ロボットが暴れてしまう
+				self.twist.angular.z = -float(err)/1000	#誤差にあわせて回転速度を変化させる（-1/1000がP制御でいうところの比例ゲインにあたる）
+				self.cmd_vel_pub.publish(self.twist)
+			#左パターン
+			if cmd == 1:
+				err = min(cx_data) - w//2	#左の重心座標(x)と画像の中心(x)との差
+				self.twist.linear.x = 0.2
+				#self.twist.angular.z = -float(err)/100	#画像が大きいためか，-1/100では絶対値がまだ十分に大きく，ロボットが暴れてしまう
+				self.twist.angular.z = -float(err)/1000	#誤差にあわせて回転速度を変化させる（-1/1000がP制御でいうところの比例ゲインにあたる）
+				self.cmd_vel_pub.publish(self.twist)
+			
 		#停止線処理
 		M_yellow = cv.moments(mask_yellow)
 		if M_yellow['m00'] > 0:
-			self.twist.linear.x = 0.02
+			self.twist.linear.x = 0.01
 			self.twist.angular.z = 0
 			self.cmd_vel_pub.publish(self.twist)
 			
@@ -94,6 +94,20 @@ class Follower:
 		cv.imshow('MASK_yellow', display_mask_yellow)			
 		cv.imshow('MASKED_yellow', display_masked_yellow)	
 		cv.waitKey(3)	#3ミリ秒待つ
+
+cmd = 0
+def callback(message):
+	global cmd
+	if message.data == "Left":
+		cmd = 1
+		print("L")
+	if message.data == "Right":
+		cmd = 0
+		print("R")
+
+#rospy.init_node('listener')
+sub = rospy.Subscriber('/cmd_LR', String, callback)
+
 
 rospy.init_node('follower')	#'follower'という名前でノードを初期化
 follower = Follower()	#Followerクラスのインスタンスを作成（init関数が実行される）
